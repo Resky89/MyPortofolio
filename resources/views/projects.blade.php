@@ -18,7 +18,7 @@
 
             <!-- Projects Grid with improved animation -->
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                @forelse ($projects as $index => $project)
+                @forelse (array_reverse($projects) as $index => $project)
                     <div class="group relative overflow-hidden rounded-2xl transform transition-all duration-500 hover:-translate-y-2 hover:shadow-xl"
                          data-aos="fade-up"
                          data-aos-delay="{{ $index * 100 }}">
@@ -52,7 +52,15 @@
                     </div>
                 @empty
                     <div class="col-span-3 text-center text-gray-600" data-aos="fade-up">
-                        No projects found
+                        <p>No projects found</p>
+                        <!-- Add button for empty state -->
+                        <button
+                            type="button"
+                            class="admin-button hidden mt-4 inline-block px-6 py-2 rounded-full bg-purple-600 text-white hover:bg-purple-700 transition duration-300"
+                            onclick="openAddProjectModal()"
+                        >
+                            Add Your First Project
+                        </button>
                     </div>
                 @endforelse
             </div>
@@ -224,20 +232,31 @@
 
                     if (keysPressed['Control'] && keysPressed['Shift'] && event.key === 'A') {
                         event.preventDefault();
+                        console.log('Secret key combination detected (Ctrl + Shift + A)');
+
                         const addButton = document.getElementById('openModal');
+                        const emptyStateAddButton = document.querySelector('.admin-button');
                         const adminButtons = document.querySelectorAll('.admin-button');
 
-                        // Toggle add button
-                        addButton.classList.toggle('hidden');
+                        console.log('Empty state add button found:', !!emptyStateAddButton);
+                        console.log('Regular add button found:', !!addButton);
 
-                        // Toggle edit and delete buttons
+                        // Toggle buttons
+                        if (addButton) {
+                            addButton.classList.toggle('hidden');
+                            console.log('Regular add button visibility toggled:', !addButton.classList.contains('hidden'));
+                        }
+
                         adminButtons.forEach(button => {
                             button.classList.toggle('hidden');
+                            console.log('Admin button visibility toggled:', !button.classList.contains('hidden'));
                         });
 
                         // Auto-hide after 3 seconds
+                        console.log('Starting 3-second auto-hide timer');
                         setTimeout(() => {
-                            addButton.classList.add('hidden');
+                            console.log('Auto-hiding buttons');
+                            if (addButton) addButton.classList.add('hidden');
                             adminButtons.forEach(button => {
                                 button.classList.add('hidden');
                             });
@@ -551,6 +570,36 @@
                         delay: 50
                     });
                 });
+
+                // Add this new function
+                function openAddProjectModal() {
+                    console.log('Opening add project modal from empty state');
+                    const modal = document.getElementById('projectModal');
+                    const form = document.getElementById('projectForm');
+
+                    // Reset form
+                    console.log('Resetting form');
+                    form.reset();
+
+                    // Update modal title
+                    document.querySelector('#projectModal h2').textContent = 'Add New Project';
+
+                    // Reset image preview
+                    document.getElementById('imagePreview').classList.add('hidden');
+
+                    // Reset technology buttons
+                    console.log('Resetting technology buttons');
+                    document.querySelectorAll('.tech-btn').forEach(button => {
+                        button.classList.add('bg-gray-200', 'text-gray-700');
+                        button.classList.remove('bg-purple-600', 'text-white');
+                    });
+
+                    document.getElementById('selectedTechnologies').value = '';
+
+                    // Show modal
+                    console.log('Showing modal');
+                    modal.classList.remove('hidden');
+                }
             </script>
         </div>
     </div>
