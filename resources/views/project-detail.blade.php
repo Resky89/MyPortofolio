@@ -102,17 +102,29 @@
 
 <!-- Image Popup Modal -->
 <div id="imagePopup" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center">
-    <div class="relative w-full h-full flex items-center justify-center p-4">
+    <div class="relative w-full h-full flex items-center justify-center p-4 overflow-auto">
         <button onclick="closeImagePopup()" class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-300">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
         </button>
-        <img id="popupImage" src="" alt="Enlarged project image" class="max-w-full max-h-[90vh] object-contain">
+        <div class="w-full h-full flex items-center justify-center">
+            <img id="popupImage"
+                 src=""
+                 alt="Enlarged project image"
+                 class="max-w-none max-h-none cursor-move"
+                 style="transform-origin: center; touch-action: manipulation;">
+        </div>
     </div>
 </div>
 
 <script>
+let scale = 1;
+let panning = false;
+let pointX = 0;
+let pointY = 0;
+let start = { x: 0, y: 0 };
+
 function openImagePopup(imageSrc) {
     const popup = document.getElementById('imagePopup');
     const popupImage = document.getElementById('popupImage');
@@ -120,7 +132,10 @@ function openImagePopup(imageSrc) {
     popupImage.src = imageSrc;
     document.body.style.overflow = 'hidden';
 
-    // Add fade-in animation
+    // Reset zoom level
+    scale = 1;
+    popupImage.style.transform = `scale(${scale})`;
+
     popup.style.opacity = '0';
     popup.style.transition = 'opacity 0.3s ease-in-out';
     setTimeout(() => {
@@ -128,8 +143,59 @@ function openImagePopup(imageSrc) {
     }, 10);
 }
 
+// Add zoom functionality
+document.getElementById('popupImage').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY);
+    const zoomSpeed = 0.1;
+
+    if (delta < 0) {
+        scale = Math.min(scale + zoomSpeed, 4); // Max zoom 4x
+    } else {
+        scale = Math.max(0.5, scale - zoomSpeed); // Min zoom 0.5x
+    }
+
+    e.target.style.transform = `scale(${scale})`;
+});
+
+// Add touch zoom functionality
+let initialDistance = 0;
+document.getElementById('popupImage').addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        initialDistance = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+    }
+});
+
+document.getElementById('popupImage').addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+
+        const currentDistance = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+
+        const delta = currentDistance - initialDistance;
+        const zoomSpeed = 0.01;
+
+        scale = Math.min(Math.max(0.5, scale + (delta * zoomSpeed)), 4);
+        e.target.style.transform = `scale(${scale})`;
+
+        initialDistance = currentDistance;
+    }
+});
+
 function closeImagePopup() {
     const popup = document.getElementById('imagePopup');
+    const popupImage = document.getElementById('popupImage');
+
+    // Reset zoom and position
+    scale = 1;
+    popupImage.style.transform = `scale(${scale})`;
+
     popup.style.opacity = '0';
     setTimeout(() => {
         popup.style.display = 'none';
@@ -233,6 +299,25 @@ document.addEventListener('keydown', function(e) {
 
 .group {
     animation: subtlePulse 2s infinite;
+}
+
+/* Add styles for zoom functionality */
+#imagePopup {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#popupImage {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    transition: transform 0.1s ease-out;
+}
+
+.overflow-auto {
+    -webkit-overflow-scrolling: touch;
 }
 </style>
 @endsection
